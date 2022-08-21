@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post } from 'src/post/post.interface';
@@ -39,6 +43,52 @@ export class UserService {
       return {
         success: true,
         message: 'User deleted Successfully',
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+  async followUser(id: string, followUserId: string) {
+    try {
+      const followUser = await this.userModel.findById(followUserId);
+      if (!followUser) throw new NotFoundException('User not found');
+
+      const user = await this.userModel.findById(id);
+
+      if (user.following.includes(followUserId))
+        throw new BadRequestException('User already followed');
+
+      user.following.push(followUserId);
+
+      await user.save();
+
+      followUser.followers.push(id);
+
+      await followUser.save();
+
+      return {
+        success: true,
+        msg: 'User followed successfully',
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async unfollowUser(id: string, unfollowUserId: string) {
+    try {
+      const unfollowUser = await this.userModel.findById(unfollowUserId);
+      if (!unfollowUser) throw new NotFoundException('User not found');
+
+      const user = await this.userModel.findById(id);
+
+      if (!user.following.includes(unfollowUserId))
+        throw new BadRequestException('User not followed');
+      await user.updateOne({ $pull: { following: unfollowUserId } });
+      await unfollowUser.updateOne({ $pull: { followers: id } });
+      return {
+        success: true,
+        msg: 'User unfollowed successfully',
       };
     } catch (error) {
       throw error;
