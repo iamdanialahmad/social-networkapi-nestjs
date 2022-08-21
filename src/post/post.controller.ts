@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Post, UseGuards } from '@nestjs/common';
 import { getUser } from 'src/auth/decorator';
 import { JwtGuard } from 'src/auth/guard';
-import { createPostDto, updatePostDto, deletePostDto } from './dto';
+import { createPostDto, updatePostDto, deletePostDto, getFeedDto } from './dto';
 import { PostService } from './post.service';
 
 @UseGuards(JwtGuard)
@@ -27,5 +27,15 @@ export class PostController {
   @Delete('deletePost')
   deletePost(@getUser('id') id: string, @Body() dto: deletePostDto) {
     return this.postService.deletePost(id, dto);
+  }
+
+  @Get('getFeed')
+  getFeed(@getUser('id') id: string, @Body() dto: getFeedDto) {
+    return this.postService.getFeed(id, dto);
+  }
+
+  @Get('moderationFeed')
+  getModerationFeed(@getUser('id') id: string, @Body() dto: getFeedDto) {
+    return this.postService.getModerationFeed(id, dto);
   }
 }
