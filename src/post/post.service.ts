@@ -8,6 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { User } from 'src/user/user.interface';
 import { createPostDto, deletePostDto, updatePostDto } from './dto';
 import { Post } from './post.interface';
+import { getFeedDto } from './dto/getFeed.dto';
 
 @Injectable()
 export class PostService {
@@ -85,6 +86,64 @@ export class PostService {
       return {
         success: true,
         message: 'Post Deleted Successfully',
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getFeed(id: string, dto: getFeedDto) {
+    try {
+      const { page = 1, limit = 2 } = dto;
+      const user = await this.userModel.findById(id);
+
+      if (!user.isPaid)
+        throw new UnauthorizedException('You are not premium member');
+      const totalItems = await this.postModel
+        .find({ createrId: { $in: user.following } })
+        .countDocuments();
+
+      const posts = await this.postModel
+        .find({ createrId: { $in: user.following } })
+        .limit(limit * 1)
+        .skip((page - 1) * page)
+        .sort({ createdAt: -1 })
+        .select(' -updatedAt -__v')
+        .exec();
+
+      return {
+        posts,
+        totalPages: Math.ceil(totalItems / limit),
+        CurrentPage: page,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getModerationFeed(id: string, dto: getFeedDto) {
+    try {
+      const user = await this.userModel.findById(id);
+      if (!user.isModerator)
+        throw new UnauthorizedException('You are not a moderator');
+
+      const { page = 1, limit = 2 } = dto;
+      const totalItems = await this.postModel
+        .find({ createrId: { $in: user.following } })
+        .countDocuments();
+
+      const posts = await this.postModel
+        .find({ createrId: { $in: user.following } })
+        .limit(limit * 1)
+        .skip((page - 1) * page)
+        .sort({ createdAt: -1 })
+        .select(' -createrId -createrName -updatedAt -__v')
+        .exec();
+
+      return {
+        posts,
+        totalPages: Math.ceil(totalItems / limit),
+        CurrentPage: page,
       };
     } catch (error) {
       throw error;
