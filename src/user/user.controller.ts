@@ -1,6 +1,7 @@
-import { Controller, Delete, Get, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, UseGuards } from '@nestjs/common';
 import { getUser } from 'src/auth/decorator';
 import { JwtGuard } from 'src/auth/guard';
+import { followUserDto } from './dto';
 import { UserService } from './user.service';
 
 @UseGuards(JwtGuard)
@@ -17,5 +18,15 @@ export class UserController {
   @Delete('/deleteUser')
   deleteUser(@getUser('id') id: string) {
     return this.userService.deleteUser(id);
+  }
+
+  @Post('/follow')
+  followUser(@getUser('id') id: string, @Body() dto: followUserDto) {
+    return this.userService.followUser(id, dto.userId);
+  }
+
+  @Post('/unfollow')
+  unfollowUser(@getUser('id') id: string, @Body() dto: followUserDto) {
+    return this.userService.unfollowUser(id, dto.userId);
   }
 }
